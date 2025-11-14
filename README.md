@@ -153,7 +153,7 @@ This guide provides instructions for both regular users (via a simple installer)
 
 The easiest way to install Precision File Search is to download the latest official installer for Windows.
 
-[![Latest Release](https://img.shields.io/badge/Download-V1.0.15-blueviolet?style=for-the-badge)](https://github.com/PFS-AI/PFS/releases/latest)
+[![Latest Release](https://img.shields.io/badge/Download-V1.0.16-blueviolet?style=for-the-badge)](https://github.com/PFS-AI/PFS/releases/latest)
 
 1.  Click the button above to go to the latest release page.
 2.  Under the **Assets** section, download the `PFS-SETUP_vX.X.X.exe` file.
@@ -518,15 +518,15 @@ This project is licensed under the **Mozilla Public License 2.0 (MPL-2.0)**.
 
 You are free to use, study, share, and modify the software. If you modify any MPL-licensed files, you must make the source code of those specific files available. You may combine this software with proprietary code in a larger project without needing to release the source code of your other components.
 
-**🔔 Additional Attribution Requirement**  
+**🔔 Additional Attribution Requirement**
 In accordance with MPL 2.0, all distributions of this software in **binary and source form** must include the following user-visible attribution in at least one of the following locations:
-- In the README  
-- On a startup/splash screen  
-- In an "About" or "Acknowledgements" dialog box  
-- In the primary documentation or "Help" menu  
-- As a footer on a command-line tool's initial output  
+- In the README
+- On a startup/splash screen
+- In an "About" or "Acknowledgements" dialog box
+- In the primary documentation or "Help" menu
+- As a footer on a command-line tool's initial output
 
-**Required attribution text:**  
+**Required attribution text:**
 > *Powered by Precision File Search (PFS) from https://github.com/PFS-AI.*
 
 For the full license text, please see the [LICENSE](LICENSE) file.

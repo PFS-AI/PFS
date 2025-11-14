@@ -1,4 +1,9 @@
-# main.py
+# File Version: 1.2.0
+# /main.py
+
+# Copyright (c) 2025 Ali Kazemi
+# Licensed under MPL 2.0
+# This file is part of a derivative work and must retain this notice.
 
 """
 The main entry point for the Precision File Search (PFS) application.
@@ -44,7 +49,7 @@ from backend.app_logic import DB_FILE
 from backend.logging_config import setup_logging, LOG_LEVELS, DEFAULT_LOG_LEVEL
 
 load_dotenv()
-logger = None # Will be initialized after setup_logging
+logger = None 
 
 # 2. APPLICATION INITIALIZATION HELPERS #########################################################################
 def init_db():
@@ -70,7 +75,7 @@ def init_db():
 def initialize_ai_models():
     """
     Initializes AI models based on the current configuration.
-    
+
     - On first run (with empty config), this function will do nothing and finish quickly.
     - After the user configures models and restarts, this function will handle the
       download and loading process, providing feedback in the console.
@@ -78,15 +83,12 @@ def initialize_ai_models():
     if not logger:
         print("Logger not available for AI model initialization.")
         return
-        
+
     logger.info("Verifying AI model configuration...")
     try:
-        # This import triggers the model loading logic in semantic_search.py and rag_pipeline.py
         from backend import semantic_search
-        
-        # Accessing the variables ensures they are initialized if configured
+
         if semantic_search.EMBEDDINGS is None:
-            # This is expected on first run. It's only an error if a model name IS configured.
             if semantic_search.EMBEDDING_CONFIG.get("model_name"):
                 raise RuntimeError("Embedding model is configured but failed to initialize.")
             else:
@@ -98,10 +100,30 @@ def initialize_ai_models():
                     logger.warning("Reranker is enabled, but the model failed to load.")
                 else:
                     logger.info("Reranker is enabled, but no model is configured. Skipping.")
-        
+
         logger.info("AI model verification complete.")
     except Exception as e:
         logger.critical(f"A critical error occurred during AI model initialization: {e}", exc_info=True)
+
+# Block Version: 1.2.0
+def warm_up_unstructured():
+    """
+    Warms up the 'unstructured' library by running a trivial partition.
+    This pays the one-time model loading cost at startup instead of during
+    the first classic content search, dramatically improving search performance.
+    """
+    if not logger:
+        print("Logger not available for unstructured warm-up.")
+        return
+
+    logger.info("Warming up text extraction engine (unstructured)...")
+    try:
+        from unstructured.partition.text import partition_text
+        partition_text(text="warm-up")
+        logger.info("Text extraction engine is ready.")
+    except Exception as e:
+        logger.warning(f"An error occurred during unstructured warm-up: {e}", exc_info=True)
+
 
 def open_browser():
     """Opens the default web browser to the application's URL."""
@@ -118,14 +140,14 @@ async def lifespan(app: FastAPI):
     """Handles application startup and shutdown events for FastAPI."""
     if logger:
         logger.info("FastAPI application startup...")
-    
+
     load_and_index_knowledge_base()
-    
+
     if hasattr(app.state, "startup_event"):
         app.state.startup_event.set()
-    
+
     yield
-    
+
     if logger:
         logger.info("FastAPI application shutdown.")
 
@@ -179,17 +201,19 @@ if __name__ == "__main__":
 
     setup_logging(level=log_level_to_use)
     logger = logging.getLogger(__name__)
-    
+
     init_db()
-    
+
     logger.info("="*60)
     logger.info("Starting Precision File Search (PFS)...")
     logger.info(f"Log level set to: {log_level_to_use}")
 
-    # This thread runs every time. It will be fast if no models are configured,
-    # and slow (with download progress) if they are.
     model_init_thread = threading.Thread(target=initialize_ai_models, daemon=True)
     model_init_thread.start()
+
+    unstructured_warmup_thread = threading.Thread(target=warm_up_unstructured, daemon=True)
+    unstructured_warmup_thread.start()
+
 
     startup_event = threading.Event()
     app.state.startup_event = startup_event
@@ -197,13 +221,13 @@ if __name__ == "__main__":
     server = uvicorn.Server(config)
     server_thread = threading.Thread(target=server.run, daemon=True)
     server_thread.start()
-    
+
     logger.info("Waiting for web server to start...")
     startup_event.wait()
-    
+
     logger.info("Waiting for AI model verification to complete...")
-    model_init_thread.join() # This ensures we wait for any potential downloads to finish.
-    
+    model_init_thread.join()
+
     logger.info("Application startup complete. Launching browser...")
     open_browser()
     logger.info("Your browser should open automatically to http://127.0.0.1:9090")

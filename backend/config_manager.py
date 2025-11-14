@@ -1,11 +1,11 @@
-# backend\config_manager.py
+# File Version: 1.1.0
+# /backend/config_manager.py
 
-"""
-# Precision File Search
 # Copyright (c) 2025 Ali Kazemi
 # Licensed under MPL 2.0
 # This file is part of a derivative work and must retain this notice.
 
+"""
 Manages the application's configuration using a persistent SQLite database.
 
 This module provides a centralized and robust way to handle all application
@@ -40,7 +40,6 @@ from typing import Any
 # 2. CONSTANTS & DEFAULTS #######################################################################################
 logger = logging.getLogger(__name__)
 
-# --- NEW: Function to get a user-specific writable directory ---
 def get_user_data_dir() -> str:
     """
     Returns a writable directory for user-specific application data.
@@ -51,14 +50,12 @@ def get_user_data_dir() -> str:
     - On Windows, this typically resolves to: C:\\Users\\<Username>\\AppData\\Roaming\\PrecisionFileSearch
     - On macOS/Linux, it resolves to: /home/<username>/.config/PrecisionFileSearch
     """
-    # Use APPDATA on Windows
     if os.name == 'nt':
         app_data_path = os.getenv('APPDATA')
         if app_data_path:
             user_dir = os.path.join(app_data_path, "PrecisionFileSearch")
-        else: # Fallback for unusual Windows setups
+        else:
             user_dir = os.path.join(os.path.expanduser("~"), ".PrecisionFileSearch")
-    # Use XDG_CONFIG_HOME or ~/.config on Linux/macOS
     else:
         xdg_config_home = os.getenv('XDG_CONFIG_HOME')
         if xdg_config_home:
@@ -66,22 +63,23 @@ def get_user_data_dir() -> str:
         else:
             user_dir = os.path.join(os.path.expanduser("~"), ".config", "PrecisionFileSearch")
 
-    # Ensure the directory exists
     try:
         os.makedirs(user_dir, exist_ok=True)
     except OSError:
         logger.error(f"Could not create user data directory at {user_dir}. Falling back to a local folder.")
-        # As a last resort, fall back to a local folder, though this is not ideal for installed apps
         user_dir = "user_data"
         os.makedirs(user_dir, exist_ok=True)
 
     return user_dir
 
-# Use the new function to define the data folder
 DATA_FOLDER = get_user_data_dir()
-# --- END OF MODIFICATION ---
-
 CONFIG_DB = os.path.join(DATA_FOLDER, "app_config.db")
+
+# Block Version: 1.1.0
+# Define a dedicated folder for storing downloaded AI models.
+MODELS_FOLDER = os.path.join(DATA_FOLDER, "models")
+os.makedirs(MODELS_FOLDER, exist_ok=True)
+
 
 DEFAULT_CONFIG = {
     "excluded_folders": [
