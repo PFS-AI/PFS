@@ -1,11 +1,11 @@
-# backend\routes.py
+# File Version: 1.2.0
+# /backend/routes.py
 
-"""
-# Precision File Search
 # Copyright (c) 2025 Ali Kazemi
 # Licensed under MPL 2.0
 # This file is part of a derivative work and must retain this notice.
 
+"""
 Defines the API layer for the backend using FastAPI.
 
 This module sets up all the HTTP and WebSocket endpoints that the frontend

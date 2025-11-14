@@ -1,4 +1,4 @@
-# File Version: 1.2.0
+# File Version: 1.4.0
 # /main.py
 
 # Copyright (c) 2025 Ali Kazemi
@@ -49,7 +49,7 @@ from backend.app_logic import DB_FILE
 from backend.logging_config import setup_logging, LOG_LEVELS, DEFAULT_LOG_LEVEL
 
 load_dotenv()
-logger = None 
+logger = None # Will be initialized after setup_logging
 
 # 2. APPLICATION INITIALIZATION HELPERS #########################################################################
 def init_db():
@@ -86,9 +86,12 @@ def initialize_ai_models():
 
     logger.info("Verifying AI model configuration...")
     try:
+        # This import triggers the model loading logic in semantic_search.py and rag_pipeline.py
         from backend import semantic_search
 
+        # Accessing the variables ensures they are initialized if configured
         if semantic_search.EMBEDDINGS is None:
+            # This is expected on first run. It's only an error if a model name IS configured.
             if semantic_search.EMBEDDING_CONFIG.get("model_name"):
                 raise RuntimeError("Embedding model is configured but failed to initialize.")
             else:
@@ -105,7 +108,6 @@ def initialize_ai_models():
     except Exception as e:
         logger.critical(f"A critical error occurred during AI model initialization: {e}", exc_info=True)
 
-# Block Version: 1.2.0
 def warm_up_unstructured():
     """
     Warms up the 'unstructured' library by running a trivial partition.
@@ -154,7 +156,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Precision File Search (PFS)",
     description="A local file search and classification application with an advanced RAG retrieval engine.",
-    version="1.0.0",
+    version="1.2.0",
     lifespan=lifespan
 )
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -213,7 +215,6 @@ if __name__ == "__main__":
 
     unstructured_warmup_thread = threading.Thread(target=warm_up_unstructured, daemon=True)
     unstructured_warmup_thread.start()
-
 
     startup_event = threading.Event()
     app.state.startup_event = startup_event
