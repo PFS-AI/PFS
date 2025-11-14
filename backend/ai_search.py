@@ -1,4 +1,9 @@
-# backend\ai_search.py
+# File Version: 1.3.0
+# /backend/ai_search.py
+
+# Copyright (c) 2025 Ali Kazemi
+# Licensed under MPL 2.0
+# This file is part of a derivative work and must retain this notice.
 
 """
 # Precision File Search
@@ -11,7 +16,8 @@ Handles the AI-powered search orchestration for the application.
 This module uses Large Language Models (LLMs) via the LangChain library to create
 a multi-step, intelligent search pipeline. It goes beyond simple keyword matching
 by first understanding the user's intent and then executing the most appropriate
-search strategy.
+search strategy. This version assumes the use of a multilingual embedding model,
+so it passes the user's query directly to the search pipeline without translation.
 
 The core orchestration logic is in `run_ai_search`, which performs the following:
 1.  **Intent Routing (`route_user_query`):** First, an LLM determines if the user
@@ -359,37 +365,38 @@ async def run_file_search_pipeline(
 
     return summarize_results_with_llm(query, raw_results, strategy, temperature, max_tokens)
 
-# 9. MAIN ORCHESTRATOR ##########################################################################################
+# 9. MAIN ORCHESTRATOR (SIMPLIFIED) ###############################################################################
 async def run_ai_search(
     query: str, temperature: float, max_tokens: int, k_fetch_initial: Optional[int],
     vector_score_threshold: Optional[float], vector_top_n: Optional[int],
     enable_reranker: Optional[bool], rerank_top_n: Optional[int], rerank_score_threshold: Optional[float]
 ) -> Dict[str, Any]:
     """
-    The main orchestration function. It routes the user query to the appropriate handler.
+    The main orchestration function. It takes the user's query directly and routes it.
+    This architecture relies on a multilingual embedding model for non-English queries.
     """
     try:
         clean_query = query.strip()
+
         if clean_query.upper().startswith("PFS:"):
             logger.info("Forcing Knowledge Base search due to 'PFS:' prefix.")
             actual_question = clean_query[4:].strip()
             if not actual_question:
-                 logger.warning("User provided 'PFS:' prefix with no question.")
                  return {
                     "summary": "### Knowledge Base Search\n\nYou used the `PFS:` prefix, which is for searching the application's built-in documentation. Please provide a question after the prefix.\n\n**For example:** `PFS: how does the reranker work?`",
                     "relevant_files": []
                 }
             return answer_from_knowledge_base(actual_question, temperature, max_tokens)
 
-        routing_result = route_user_query(query)
+        routing_result = route_user_query(clean_query)
         intent = routing_result.get("intent")
 
         if intent == "app_knowledge_query":
-            return answer_from_knowledge_base(query, temperature, max_tokens)
+            return answer_from_knowledge_base(clean_query, temperature, max_tokens)
 
         elif intent == "file_search_query":
             return await run_file_search_pipeline(
-                query, temperature, max_tokens, k_fetch_initial, vector_score_threshold,
+                clean_query, temperature, max_tokens, k_fetch_initial, vector_score_threshold,
                 vector_top_n, enable_reranker, rerank_top_n, rerank_score_threshold
             )
         else:

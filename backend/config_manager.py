@@ -1,4 +1,4 @@
-# File Version: 1.1.0
+# File Version: 1.4.0
 # /backend/config_manager.py
 
 # Copyright (c) 2025 Ali Kazemi
@@ -75,8 +75,6 @@ def get_user_data_dir() -> str:
 DATA_FOLDER = get_user_data_dir()
 CONFIG_DB = os.path.join(DATA_FOLDER, "app_config.db")
 
-# Block Version: 1.1.0
-# Define a dedicated folder for storing downloaded AI models.
 MODELS_FOLDER = os.path.join(DATA_FOLDER, "models")
 os.makedirs(MODELS_FOLDER, exist_ok=True)
 
@@ -116,8 +114,9 @@ DEFAULT_CONFIG = {
         "rerank_top_n": 10,
         "rerank_score_threshold": 0.5
     },
+    # Block Version: 1.1.0
     "embedding_model": {
-        "model_name": "",
+        "model_name": "sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
         "device": "auto"
     },
     "reranker_model": {
