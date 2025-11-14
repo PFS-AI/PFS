@@ -1,4 +1,5 @@
-/* static\style.css */
+/* File Version: 1.3.0 */
+/* /static/style.css */
 
 /* # Precision File Search
 # Copyright (c) 2025 Ali Kazemi
@@ -394,3 +395,25 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; background: v
 [dir="rtl"] .checkbox-field { gap: 0 1rem; }
 [dir="rtl"] .result-path { margin-right: 0; margin-left: 1rem; }
 [dir="rtl"] .history-delete-btn { margin-left: 0; margin-right: auto; }
+
+/* Block Version: 1.3.0 */
+#ai-results-section[dir="rtl"] > h2,
+#ai-results-section[dir="rtl"] #ai-results h3 {
+    text-align: right;
+}
+
+#ai-results-section[dir="rtl"] .markdown-body,
+#ai-results-section[dir="rtl"] .markdown-body p,
+#ai-results-section[dir="rtl"] .markdown-body h1,
+#ai-results-section[dir="rtl"] .markdown-body h2,
+#ai-results-section[dir="rtl"] .markdown-body h3,
+#ai-results-section[dir="rtl"] .markdown-body li {
+    text-align: right;
+    direction: rtl;
+}
+
+#ai-results-section[dir="rtl"] .markdown-body ul,
+#ai-results-section[dir="rtl"] .markdown-body ol {
+    padding-left: 0;
+    padding-right: 2em;
+}

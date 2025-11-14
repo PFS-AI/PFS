@@ -1,3 +1,6 @@
+# File Version: 1.3.0
+# /pyproject.toml
+
 # ==============================================================================
 # Precision File Search (PFS) - pyproject.toml
 # ==============================================================================
@@ -14,7 +17,7 @@ build-backend = "setuptools.build_meta"
 [project]
 # --- Core Project Metadata ---
 name = "precision-file-search"
-version = "1.0.0"
+version = "1.3.0"
 authors = [
     { name = "Ali Kazemi", email = "eng.ali.kazemi@outlook.com" },
 ]
@@ -41,8 +44,6 @@ keywords = ["search", "rag", "ai", "fastapi", "llm", "semantic-search", "classif
 
 
 # --- Project Dependencies ---
-# These are the packages required to run the application. No versions are
-# specified, so the latest versions will be installed by default.
 dependencies = [
     # Web Framework & Server
     "fastapi",
@@ -77,15 +78,15 @@ dependencies = [
 
     # Vector Database Client
     "qdrant-client",
-    
+
     # Other utilities that might be required by dependencies
     "hf_xet",
     "dill",
 ]
 
 [project.urls]
-Homepage = "https://github.com/Eng-AliKazemi/PFS"
-"Bug Tracker" = "https://github.com/Eng-AliKazemi/PFS/issues"
+Homepage = "https://github.com/PFS-AI/PFS"
+"Bug Tracker" = "https://github.com/PFS-AI/PFS/issues"
 
 # --- Tool Specific Configuration ---
 [tool.setuptools.packages.find]

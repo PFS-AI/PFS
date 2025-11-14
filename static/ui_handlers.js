@@ -1,4 +1,5 @@
-// static/ui_handlers.js
+// File Version: 1.2.0
+// /static/ui_handlers.js
 
 // # Precision File Search
 // # Copyright (c) 2025 Ali Kazemi
@@ -38,8 +39,16 @@ export function initializeAISearchUI(defaults) {
     aiMaxTokensValue.textContent = aiMaxTokensSlider.value;
 }
 
+// Block Version: 1.2.0
 function renderAIResults(data) {
     aiResultsDiv.innerHTML = '';
+    aiResultsSection.removeAttribute('dir'); 
+
+    const currentLangDirection = document.documentElement.dir;
+    if (currentLangDirection === 'rtl') {
+        aiResultsSection.setAttribute('dir', 'rtl');
+    }
+
     const summaryDiv = document.createElement('div');
     summaryDiv.className = 'markdown-body';
 
@@ -101,7 +110,7 @@ export async function performAISearch(event) {
         endpoint = '/api/ai/summarize-results';
         body = {
             query: query,
-            search_results: lastSemanticResults, // Pass the stored context
+            search_results: lastSemanticResults,
             temperature: parseFloat(aiTemperatureSlider.value),
             max_tokens: parseInt(aiMaxTokensSlider.value, 10),
         };
