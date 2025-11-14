@@ -1,4 +1,9 @@
-# backend\classifier_trainer.py
+# File Version: 1.2.0
+# /backend/classifier_trainer.py
+
+# Copyright (c) 2025 Ali Kazemi
+# Licensed under MPL 2.0
+# This file is part of a derivative work and must retain this notice.
 
 """
 # Precision File Search
@@ -54,11 +59,16 @@ logger = logging.getLogger(__name__)
 CLASSIFIER_MODEL_PATH = os.path.join(DATA_FOLDER, "document_classifier.ml")
 
 # 3. HELPER FUNCTIONS ###########################################################################################
+# Block Version: 1.2.0
 def _extract_text(file_path: Path) -> str:
+    """
+    Extracts text from a file, using the 'fast' strategy for performance.
+    """
     try:
         if not file_path.is_file():
             return ""
-        elements = partition(filename=str(file_path))
+        # FIX: Explicitly set languages to bypass auto-detection.
+        elements = partition(filename=str(file_path), strategy="fast", languages=['eng'])
         return "\n".join([str(el) for el in elements])
     except Exception as e:
         logger.warning(f"Unstructured failed on {file_path.name} during training: {e}. Falling back to text read.")

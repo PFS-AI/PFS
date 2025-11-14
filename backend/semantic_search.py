@@ -1,11 +1,11 @@
-# backend\semantic_search.py
+# File Version: 1.2.0
+# /backend/semantic_search.py
 
-"""
-# Precision File Search
 # Copyright (c) 2025 Ali Kazemi
 # Licensed under MPL 2.0
 # This file is part of a derivative work and must retain this notice.
 
+"""
 Manages the semantic search capabilities of the application.
 
 This module is responsible for the entire lifecycle of semantic search, including
@@ -300,7 +300,9 @@ def run_indexing_task(search_path: str, excluded_folders: Set[str], file_extensi
                         )
 
                 else:
-                    loader = UnstructuredLoader(str(file_path), mode="elements")
+                    # Block Version: 1.2.0
+                    loader_kwargs = {"strategy": "fast", "languages": ["eng"]}
+                    loader = UnstructuredLoader(str(file_path), mode="elements", loader_kwargs=loader_kwargs)
                     loaded_docs = loader.load()
                     if loaded_docs:
                         for doc in loaded_docs:

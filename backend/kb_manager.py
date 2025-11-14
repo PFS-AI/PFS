@@ -1,11 +1,11 @@
-# backend/kb_manager.py
+# File Version: 1.1.0
+# /backend/kb_manager.py
 
-"""
-# Precision File Search
 # Copyright (c) 2025 Ali Kazemi
 # Licensed under MPL 2.0
 # This file is part of a derivative work and must retain this notice.
 
+"""
 Manages the application's internal Knowledge Base (KB).
 
 This module is responsible for setting up and providing access to a vector store
@@ -35,9 +35,10 @@ from langchain_core.vectorstores import VectorStoreRetriever
 from qdrant_client import QdrantClient, models
 from typing import List, Optional
 
-# --- ADDED: Imports to read from config and determine device ---
 from .config_manager import get_config
-from .rag_pipeline import get_torch_device
+
+# Block Version: 1.1.0
+from .rag_pipeline import get_torch_device, get_and_prepare_model_path
 
 # 2. SETUP & GLOBALS ############################################################################################
 logger = logging.getLogger(__name__)
@@ -60,13 +61,12 @@ def load_and_index_knowledge_base():
     try:
         logger.info("Initializing Application Knowledge Base...")
 
-        # --- MODIFIED: Read embedding model from config ---
         embedding_config = get_config("embedding_model")
         model_name = embedding_config.get("model_name")
 
         if not model_name:
             logger.warning("No embedding model name found in config. Application Knowledge Base (Q&A) will be disabled.")
-            return # Gracefully disable the feature if no model is set
+            return
 
         kb_path = "static/kb/kb.md"
         logger.debug(f"Loading knowledge base document from: {kb_path}")
@@ -77,14 +77,16 @@ def load_and_index_knowledge_base():
         chunked_docs = text_splitter.split_documents(documents)
         logger.debug(f"Split knowledge base into {len(chunked_docs)} chunks.")
 
-        # --- MODIFIED: Use configured model and device ---
         device = get_torch_device(embedding_config.get("device", "auto"))
-        logger.debug(f"Initializing KB embedding model: {model_name} on device: {device}")
+
+        # Block Version: 1.1.0
+        local_model_path = get_and_prepare_model_path(model_name, "Embedding Model (for KB)")
+        logger.debug(f"Initializing KB embedding model from local path: {local_model_path} on device: {device}")
 
         _embeddings = HuggingFaceEmbeddings(
-            model_name=model_name,
+            model_name=local_model_path,
             model_kwargs={'device': device},
-            encode_kwargs={'normalize_embeddings': True} # Consistent with main RAG pipeline
+            encode_kwargs={'normalize_embeddings': True}
         )
 
         embedding_dim = len(_embeddings.embed_query("test"))

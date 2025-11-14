@@ -1,4 +1,9 @@
-# backend/file_engine.py
+# File Version: 1.3.0
+# /backend/file_engine.py
+
+# Copyright (c) 2025 Ali Kazemi
+# Licensed under MPL 2.0
+# This file is part of a derivative work and must retain this notice.
 
 """
 # Precision File Search - High-Performance File Engine
@@ -15,7 +20,8 @@ I/O and content processing.
 
 Key Features:
 - Concurrent file discovery and processing.
-- Memory-efficient chunked file reading for content search.
+- Hybrid content searching: fast, chunked reading for plain text and robust
+  extraction for complex formats like .docx and .pdf.
 - Single-pass multi-keyword searching using compiled regex.
 - Intelligent pre-filtering of files by metadata before processing content.
 - Robust error handling for individual files to ensure the pipeline continues.
@@ -37,19 +43,31 @@ from unstructured.partition.auto import partition
 # 2. SETUP & CONSTANTS ##########################################################################################
 logger = logging.getLogger(__name__)
 
-# Optimal chunk size for reading files, balancing memory and I/O calls
 CONTENT_CHUNK_SIZE = 32 * 1024  # 32 KB
+
+PLAIN_TEXT_EXTENSIONS = {
+    ".txt", ".md", ".log", ".csv", ".json", ".xml", ".html", ".htm", ".rst",
+    ".tsv", ".tex", ".py", ".js", ".java", ".c", ".cpp", ".h", ".hpp", ".cs",
+    ".go", ".rb", ".rs", ".swift", ".kt", ".scala", ".php", ".pl", ".vb",
+    ".css", ".scss", ".sass", ".less", ".svg", ".jsx", ".tsx", ".yaml",
+    ".yml", ".ini", ".toml", ".sql", ".conf", ".cfg", ".env", ".properties",
+    ".asc", ".text", ".xhtml", ".cxx", ".cc", ".hxx", ".php3", ".php4",
+    ".phtml", ".sh", ".bash", ".ps1", ".bat", ".m", ".mm", ".erb", ".jspes"
+}
+
 
 # 3. CORE HELPER FUNCTIONS ######################################################################################
 
+# Block Version: 1.3.0
 def extract_text_from_file(file_path: Path) -> str:
     """
     Extracts text content from a file using 'unstructured' with a fallback.
+    Uses the "fast" strategy and specifies the language to avoid slow detection.
     """
     try:
         if not file_path.is_file():
             return ""
-        elements = partition(filename=str(file_path))
+        elements = partition(filename=str(file_path), strategy="fast", languages=['eng'])
         return "\n".join([str(el) for el in elements])
     except Exception as e:
         logger.warning(f"Unstructured failed on {file_path.name}: {e}. Falling back to text read.")
@@ -60,9 +78,10 @@ def extract_text_from_file(file_path: Path) -> str:
             logger.error(f"Fallback text read also failed for {file_path.name}: {fe}")
             return ""
 
-def _is_match_content_chunked(file_path: Path, pattern: re.Pattern) -> bool:
+def _is_match_content_chunked_reader(file_path: Path, pattern: re.Pattern) -> bool:
     """
-    Reads a file in chunks and checks if any chunk matches the regex pattern.
+    Reads a plain text file in chunks and checks if any chunk matches the regex pattern.
+    This is highly memory-efficient for large text files.
     """
     try:
         with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
@@ -73,24 +92,41 @@ def _is_match_content_chunked(file_path: Path, pattern: re.Pattern) -> bool:
                     return True
                 buffer = chunk[-overlap:]
     except Exception as e:
-        logger.debug(f"Could not read content from {file_path}: {e}")
+        logger.debug(f"Could not read content from {file_path} using chunked reader: {e}")
     return False
 
-# --- NEW HELPER FUNCTION TO FIX THE REGEX BUG ---
+def _is_match_content_full_extraction(file_path: Path, pattern: re.Pattern) -> bool:
+    """
+    Extracts all text content from complex file types (like .docx, .pdf)
+    using the 'unstructured' library and then checks for a match.
+    """
+    try:
+        content = extract_text_from_file(file_path)
+        if content and pattern.search(content):
+            return True
+    except Exception as e:
+        logger.debug(f"Could not extract or search content from {file_path}: {e}")
+    return False
+
+def _is_match_content(file_path: Path, pattern: re.Pattern) -> bool:
+    """
+    Orchestrates content matching by selecting the appropriate method.
+    Uses a fast chunked reader for plain text files and full extraction for others.
+    """
+    if file_path.suffix.lower() in PLAIN_TEXT_EXTENSIONS:
+        return _is_match_content_chunked_reader(file_path, pattern)
+    else:
+        return _is_match_content_full_extraction(file_path, pattern)
+
 def _translate_wildcard_to_regex(pattern: str) -> str:
     """
     Translates a file system wildcard pattern (*, ?) to a valid regex pattern.
     This makes the "Use Regex" feature more intuitive for file searches.
     """
-    # First, escape all special regex characters to treat them as literals.
     escaped_pattern = re.escape(pattern)
-    # Then, replace the now-escaped wildcard characters with their regex equivalents.
-    # Replace \* with .* (zero or more of any character)
     regex_pattern = escaped_pattern.replace(r'\*', '.*')
-    # Replace \? with . (any single character)
     regex_pattern = regex_pattern.replace(r'\?', '.')
     return regex_pattern
-# --- END OF NEW FUNCTION ---
 
 # 4. FILE SEARCH ENGINE CLASS ###################################################################################
 
@@ -113,7 +149,6 @@ class FileSearchEngine:
         self.max_workers = min(32, cpu_cores + 4)
         logger.info(f"FileSearchEngine initialized with max_workers={self.max_workers}")
 
-    # --- MODIFIED LOGIC TO USE THE NEW HELPER FUNCTION ---
     def _compile_search_pattern(self, keywords: List[str], use_regex: bool, case_sensitive: bool) -> re.Pattern:
         """
         Compiles a single, efficient regex pattern. If 'use_regex' is true,
@@ -130,7 +165,6 @@ class FileSearchEngine:
             pattern_str = '|'.join(map(re.escape, keywords))
 
         return re.compile(pattern_str, flags)
-    # --- END OF MODIFICATION ---
 
     def _get_file_extensions(self, req: Any) -> tuple:
         """Get file extensions tuple based on search request."""
@@ -159,7 +193,7 @@ class FileSearchEngine:
                 if pattern.search(file_path.name):
                     match_found = True
             elif req.search_type.value == "file_content":
-                if _is_match_content_chunked(file_path, pattern):
+                if _is_match_content(file_path, pattern):
                     match_found = True
 
             if match_found:

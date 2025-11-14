@@ -1,11 +1,11 @@
-# backend/rag_pipeline.py
+# File Version: 1.3.0
+# /backend/rag_pipeline.py
 
-"""
-# Precision File Search
 # Copyright (c) 2025 Ali Kazemi
 # Licensed under MPL 2.0
 # This file is part of a derivative work and must retain this notice.
 
+"""
 Manages the core components of the Retrieval-Augmented Generation (RAG) pipeline.
 
 This module is responsible for initializing and managing the machine learning
@@ -28,17 +28,22 @@ Key functionalities include:
 """
 
 # 1. IMPORTS ####################################################################################################
+import os
 import torch
 import logging
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 from langchain_huggingface import HuggingFaceEmbeddings
 from typing import List, Dict, Any, Optional, Tuple
-
-# Import this to handle the cache directory
 from huggingface_hub import snapshot_download
+
+# Block Version: 1.3.0
+from .config_manager import MODELS_FOLDER
 
 # 2. SETUP & UTILITIES ##########################################################################################
 logger = logging.getLogger(__name__)
+
+IS_OFFLINE = os.environ.get("HF_HUB_OFFLINE") == "1"
+
 
 def get_torch_device(configured_device: str = "auto") -> str:
     """Determines the optimal torch device (CUDA, MPS, CPU) for model loading."""
@@ -65,43 +70,45 @@ def get_torch_device(configured_device: str = "auto") -> str:
     logger.info("No GPU detected, falling back to CPU.")
     return "cpu"
 
-
-def ensure_model_is_downloaded(model_name: str, model_type: str) -> None:
+# Block Version: 1.3.0
+def get_and_prepare_model_path(model_name: str, model_type: str) -> str:
     """
-    Checks if a Hugging Face model is cached locally and downloads it if not.
-    Provides clear logging for the user during the download.
-
-    Args:
-        model_name (str): The name of the model on the Hugging Face Hub (e.g., "BAAI/bge-small-en-v1.5").
-        model_type (str): A human-readable name for logging (e.g., "Embedding Model").
+    Ensures a model is available locally, downloading if necessary.
+    Returns the absolute local path to the model for offline-safe loading.
     """
-    if not model_name:
-        logger.warning(f"{model_type}: No model name provided. Skipping.")
-        return
+    if not model_name or not model_name.strip():
+        raise ValueError(f"{model_type} name cannot be empty.")
 
+    safe_model_name = model_name.replace("/", "__")
+    local_model_path = os.path.join(MODELS_FOLDER, safe_model_name)
+
+    if os.path.isdir(local_model_path):
+        logger.info(f"Found existing local model for '{model_name}' at '{local_model_path}'.")
+        return local_model_path
+
+    if IS_OFFLINE:
+        logger.error(f"Offline mode: Model '{model_name}' not found at '{local_model_path}'.")
+        raise RuntimeError(
+            f"Offline mode is enabled, but the required {model_type} '{model_name}' was not "
+            "found locally. Please run the application with an internet connection once to "
+            "download the necessary models."
+        )
+
+    logger.info(f"Model '{model_name}' not found locally. Downloading to '{local_model_path}'...")
     try:
-        # This function will check the cache first. If the model is present, it does nothing and returns instantly.
-        # If not, it will download the model and show a progress bar in the console.
-        logger.info(f"Verifying {model_type} '{model_name}'...")
-
-        # --- MODIFIED: Added force_download and resume_download parameters as requested ---
-        # NOTE: force_download=True is generally for debugging and will re-download models on every app start.
         snapshot_download(
             repo_id=model_name,
-            force_download=True,
-            resume_download=False
+            local_dir=local_model_path,
+            local_dir_use_symlinks=False,
         )
-        # --- END OF MODIFICATION ---
-
-        logger.info(f"{model_type} '{model_name}' is available locally.")
-
+        logger.info(f"Successfully downloaded {model_type} '{model_name}'.")
+        return local_model_path
     except Exception as e:
         logger.critical(
-            f"Failed to download or verify {model_type} '{model_name}'. "
+            f"Failed to download {model_type} '{model_name}'. "
             f"Please check your internet connection and the model name. Error: {e}",
-            exc_info=True
+            exc_info=True,
         )
-        # We raise the exception to stop the initialization process if a critical model fails.
         raise RuntimeError(f"Could not acquire required model: {model_name}") from e
 
 
@@ -113,23 +120,22 @@ def initialize_embedding_model(model_name: str, device: str) -> Optional[Hugging
         return None
 
     try:
-        # Call the verification function before trying to load
-        ensure_model_is_downloaded(model_name, "Embedding Model")
+        local_path = get_and_prepare_model_path(model_name, "Embedding Model")
 
-        logger.info(f"Loading embedding model: {model_name} on device: {device}")
+        logger.info(f"Loading embedding model from local path: {local_path} on device: {device}")
         model_kwargs = {'device': device}
         encode_kwargs = {'normalize_embeddings': True}
+
         embeddings = HuggingFaceEmbeddings(
-            model_name=model_name,
+            model_name=local_path,
             model_kwargs=model_kwargs,
             encode_kwargs=encode_kwargs,
-            cache_folder=None # This forces it to use the default HF cache we just verified
         )
         logger.info("Embedding model loaded successfully.")
         return embeddings
-    except Exception:
+    except Exception as e:
         logger.critical(f"Failed to load embedding model '{model_name}'. Semantic features will be unavailable.", exc_info=True)
-        return None
+        raise e
 
 def initialize_reranker_model(model_name: str, device: str) -> Optional[Tuple]:
     """Initializes and returns the cross-encoder model and tokenizer for reranking."""
@@ -138,16 +144,16 @@ def initialize_reranker_model(model_name: str, device: str) -> Optional[Tuple]:
         return None
 
     try:
-        # Call the verification function before trying to load
-        ensure_model_is_downloaded(model_name, "Reranker Model")
+        local_path = get_and_prepare_model_path(model_name, "Reranker Model")
 
-        logger.info(f"Loading reranker model: {model_name} on device: {device}")
-        tokenizer = AutoTokenizer.from_pretrained(model_name)
-        model = AutoModelForSequenceClassification.from_pretrained(model_name).to(device)
+        logger.info(f"Loading reranker model from local path: {local_path} on device: {device}")
+
+        tokenizer = AutoTokenizer.from_pretrained(local_path)
+        model = AutoModelForSequenceClassification.from_pretrained(local_path).to(device)
         model.eval()
         logger.info("Reranker model loaded successfully.")
         return tokenizer, model, device
-    except Exception:
+    except Exception as e:
         logger.error(f"Failed to load reranker model '{model_name}'. Reranking will be unavailable.", exc_info=True)
         return None
 
