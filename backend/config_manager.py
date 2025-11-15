@@ -116,7 +116,7 @@ DEFAULT_CONFIG = {
     },
     # Block Version: 1.1.0
     "embedding_model": {
-        "model_name": "sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
+        "model_name": "sentence-transformers/all-MiniLM-L6-v2",
         "device": "auto"
     },
     "reranker_model": {
