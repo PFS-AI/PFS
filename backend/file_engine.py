@@ -120,12 +120,28 @@ def _is_match_content(file_path: Path, pattern: re.Pattern) -> bool:
 
 def _translate_wildcard_to_regex(pattern: str) -> str:
     """
-    Translates a file system wildcard pattern (*, ?) to a valid regex pattern.
-    This makes the "Use Regex" feature more intuitive for file searches.
+    Translates a file system wildcard pattern (*, ?) to a valid regex pattern,
+    while preserving common regex anchors like ^ and $.
     """
+    # Preserve anchors and escape the rest of the pattern
+    has_start_anchor = pattern.startswith('^')
+    has_end_anchor = pattern.endswith('$')
+
+    if has_start_anchor:
+        pattern = pattern[1:]
+    if has_end_anchor:
+        pattern = pattern[:-1]
+
     escaped_pattern = re.escape(pattern)
     regex_pattern = escaped_pattern.replace(r'\*', '.*')
     regex_pattern = regex_pattern.replace(r'\?', '.')
+
+    # Re-apply anchors to the final regex pattern
+    if has_start_anchor:
+        regex_pattern = '^' + regex_pattern
+    if has_end_anchor:
+        regex_pattern = regex_pattern + '$'
+
     return regex_pattern
 
 # 4. FILE SEARCH ENGINE CLASS ###################################################################################
