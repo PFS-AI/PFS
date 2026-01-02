@@ -551,14 +551,12 @@ Professional services are available for organizations that need to take PFS to t
 -   **On-Premise Deployment & Consulting:** Professional assistance with deploying and scaling PFS in a secure, private corporate environment.
 -   **AI/RAG Pipeline Consulting:** Leveraging the expertise behind PFS to help you build similar intelligent search and data processing solutions for your own applications.
 
-For all commercial inquiries, please contact the project lead, **Ali Kazemi**. He is a certified **IBM AI Engineer** and **AI Solution Architect** who specializes in developing and consulting on intelligent systems for enterprise clients.
-
-He holds more than 20 specialization and professional certifications from **IBM**, underscoring his deep expertise in AI and related technologies, and is a member of the **European AI Alliance**.
-
 ![European AI Alliance](https://futurium.ec.europa.eu/system/files/styles/fut_group_logo/private/2025-09/AI%20Alliance%20logo%201.png?h=d0ac640d&itok=C2EbFBbk)
 
 🔗 [Read the official project article on the European AI Alliance portal](https://futurium.ec.europa.eu/en/apply-ai-alliance/community-content/precision-file-search-precise-combination-search-engine-and-ai)
 
 #### Contact & Inquiries
+
+Developed by Aran Kazemi, [**IBM**](https://en.wikipedia.org/wiki/IBM) Certified AI Engineer.
 
 <a href="https://linkedin.com/in/e-a-k" target="_blank"><img src="https://img.shields.io/badge/Connect-LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white&labelColor=555" alt="Connect on LinkedIn"/></a>
